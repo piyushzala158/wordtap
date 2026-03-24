@@ -1,4 +1,5 @@
 const WORD_PATTERN = /^[A-Za-z]+(?:['-][A-Za-z]+)*$/;
+const SENTENCE_END_PATTERN = /[.!?]+$/;
 
 export function splitParagraph(paragraph) {
   return paragraph.split(/(\s+)/).flatMap((segment) => {
@@ -28,4 +29,43 @@ export function splitIntoParagraphs(article) {
 
 export function normalizeWord(word) {
   return word.toLowerCase();
+}
+
+export function splitParagraphWithSentenceContext(paragraph) {
+  const tokens = splitParagraph(paragraph).map((token) => ({ ...token }));
+  const sentenceTokenIndexes = [];
+  let sentenceBuffer = '';
+
+  function flushSentence() {
+    const sentence = sentenceBuffer.trim();
+
+    if (!sentence) {
+      sentenceTokenIndexes.length = 0;
+      sentenceBuffer = '';
+      return;
+    }
+
+    sentenceTokenIndexes.forEach((tokenIndex) => {
+      tokens[tokenIndex].sentence = sentence;
+    });
+
+    sentenceTokenIndexes.length = 0;
+    sentenceBuffer = '';
+  }
+
+  tokens.forEach((token, index) => {
+    sentenceBuffer += token.value;
+
+    if (token.type === 'word') {
+      sentenceTokenIndexes.push(index);
+    }
+
+    if (token.type === 'punctuation' && SENTENCE_END_PATTERN.test(token.value)) {
+      flushSentence();
+    }
+  });
+
+  flushSentence();
+
+  return tokens;
 }

@@ -72,6 +72,16 @@ function Tooltip({ anchor, data, loading, error, onClose }) {
                 Part of speech: <span className="font-medium">{data.partOfSpeech}</span>
               </p>
             ) : null}
+            {data.similarWords?.length ? (
+              <p className="text-sm text-stone-600">
+                Similar words: <span className="font-medium">{data.similarWords.join(', ')}</span>
+              </p>
+            ) : null}
+            {data.oppositeWords?.length ? (
+              <p className="text-sm text-stone-600">
+                Opposite words: <span className="font-medium">{data.oppositeWords.join(', ')}</span>
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

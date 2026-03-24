@@ -35,14 +35,16 @@ function ReaderPage() {
     return <Navigate to="/" replace />;
   }
 
-  async function handleWordClick(word, element) {
+  async function handleWordClick(word, sentenceContext, element) {
     const normalized = normalizeWord(word);
-    const cacheKey = `${normalized}:${preferredLanguage.toLowerCase()}`;
+    const normalizedSentence = sentenceContext.trim().toLowerCase();
+    const cacheKey = `${normalized}:${preferredLanguage.toLowerCase()}:${normalizedSentence}`;
     const rect = element.getBoundingClientRect();
 
     setActiveWord(word);
     setTooltipAnchor({
       word,
+      sentenceContext,
       x: rect.left + rect.width / 2,
       y: rect.top,
       element,
@@ -63,6 +65,7 @@ function ReaderPage() {
     try {
       const response = await translateWord({
         word,
+        sentenceContext,
         targetLanguage: preferredLanguage,
       });
 

@@ -1,4 +1,7 @@
-import { splitIntoParagraphs, splitParagraph } from '../utils/articleTokens';
+import {
+  splitIntoParagraphs,
+  splitParagraphWithSentenceContext,
+} from '../utils/articleTokens';
 
 function ArticleRenderer({ article, activeWord, clickedWords, onWordClick }) {
   const paragraphs = splitIntoParagraphs(article);
@@ -6,7 +9,7 @@ function ArticleRenderer({ article, activeWord, clickedWords, onWordClick }) {
   return (
     <div className="space-y-6 text-lg leading-9 text-stone-800">
       {paragraphs.map((paragraph, paragraphIndex) => {
-        const tokens = splitParagraph(paragraph);
+        const tokens = splitParagraphWithSentenceContext(paragraph);
 
         return (
           <p key={`${paragraphIndex}-${paragraph.slice(0, 20)}`} className="whitespace-pre-wrap">
@@ -35,7 +38,9 @@ function ArticleRenderer({ article, activeWord, clickedWords, onWordClick }) {
                 <button
                   key={`${paragraphIndex}-${tokenIndex}-${token.value}`}
                   type="button"
-                  onClick={(event) => onWordClick(token.value, event.currentTarget)}
+                  onClick={(event) =>
+                    onWordClick(token.value, token.sentence || paragraph, event.currentTarget)
+                  }
                   className={`word-chip inline rounded-lg px-1.5 py-0.5 text-left focus:outline-none focus:ring-2 focus:ring-ember/30 ${
                     isActive
                       ? 'bg-amber-200/80 text-ink shadow-sm'

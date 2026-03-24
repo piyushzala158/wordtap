@@ -1,3 +1,4 @@
+// Maintainer note: do not change these theme colors without explicit user confirmation.
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
