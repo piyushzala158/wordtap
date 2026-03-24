@@ -1,7 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+import { env } from '../config/env.js';
 
 async function request(path, options) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${env.apiBaseUrl}${path}`, {
     headers: {
       'Content-Type': 'application/json',
     },
