@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #1f1a17;
+  background:
+    radial-gradient(circle at top left, rgba(180, 83, 9, 0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(31, 77, 58, 0.18), transparent 24%),
+    linear-gradient(180deg, #faf5ee 0%, #f5efe5 50%, #f3eadf 100%);
+  font-family: "Avenir Next", ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.word-chip {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.word-chip:hover {
+  transform: translateY(-1px);
+}
