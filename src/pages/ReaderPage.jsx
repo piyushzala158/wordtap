@@ -6,10 +6,12 @@ import Tooltip from '../components/Tooltip';
 import { DEFAULT_LANGUAGE } from '../constants/preferences';
 import { translateWord } from '../services/api';
 import { normalizeWord } from '../utils/articleTokens';
+import { normalizeWordForms } from '../utils/wordNormalization';
 
 function ReaderPage() {
   const location = useLocation();
-  const translationCache = useRef(new Map());
+  const exactTranslationCache = useRef(new Map());
+  const lemmaTranslationCache = useRef(new Map());
   const [activeWord, setActiveWord] = useState(null);
   const [tooltipAnchor, setTooltipAnchor] = useState(null);
   const [tooltipData, setTooltipData] = useState(null);
@@ -37,8 +39,10 @@ function ReaderPage() {
 
   async function handleWordClick(word, sentenceContext, element) {
     const normalized = normalizeWord(word);
+    const { normalizedWord, baseWordGuess } = normalizeWordForms(word);
     const normalizedSentence = sentenceContext.trim().toLowerCase();
-    const cacheKey = `${normalized}:${preferredLanguage.toLowerCase()}:${normalizedSentence}`;
+    const exactCacheKey = `${normalizedWord}:${preferredLanguage.toLowerCase()}:${normalizedSentence}`;
+    const lemmaCacheKey = `${baseWordGuess}:${preferredLanguage.toLowerCase()}:`;
     const rect = element.getBoundingClientRect();
 
     setActiveWord(word);
@@ -52,9 +56,17 @@ function ReaderPage() {
     setTooltipError('');
     setClickedWords((previous) => new Set(previous).add(normalized));
 
-    const cached = translationCache.current.get(cacheKey);
-    if (cached) {
-      setTooltipData(cached);
+    const cachedExact = exactTranslationCache.current.get(exactCacheKey);
+    if (cachedExact) {
+      setTooltipData(cachedExact);
+      setLoadingWord(false);
+      return;
+    }
+
+    const cachedLemma = lemmaTranslationCache.current.get(lemmaCacheKey);
+    if (cachedLemma && !cachedLemma.isContextSensitive) {
+      exactTranslationCache.current.set(exactCacheKey, cachedLemma);
+      setTooltipData(cachedLemma);
       setLoadingWord(false);
       return;
     }
@@ -69,7 +81,16 @@ function ReaderPage() {
         targetLanguage: preferredLanguage,
       });
 
-      translationCache.current.set(cacheKey, response);
+      exactTranslationCache.current.set(exactCacheKey, response);
+
+      if (!response.isContextSensitive) {
+        const resolvedLemmaCacheKey = `${response.baseWord}:${preferredLanguage.toLowerCase()}:${(
+          response.partOfSpeech || ''
+        ).toLowerCase()}`;
+        lemmaTranslationCache.current.set(resolvedLemmaCacheKey, response);
+        lemmaTranslationCache.current.set(lemmaCacheKey, response);
+      }
+
       setTooltipData(response);
     } catch (requestError) {
       setTooltipError(requestError.message || 'Unable to translate that word.');
