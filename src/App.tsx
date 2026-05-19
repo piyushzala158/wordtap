@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ReaderPage from './pages/ReaderPage';
 
-function App() {
+function App(): JSX.Element {
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <Routes>

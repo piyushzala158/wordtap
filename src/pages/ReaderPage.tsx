@@ -7,22 +7,44 @@ import { DEFAULT_LANGUAGE } from '../constants/preferences';
 import { translateWord } from '../services/api';
 import { normalizeWord } from '../utils/articleTokens';
 import { normalizeWordForms } from '../utils/wordNormalization';
+import type {
+  ReaderLocationState,
+  TooltipAnchor,
+  TranslationResponse,
+} from '../types/api';
 
-function ReaderPage() {
+function buildExactCacheKey(word: string, targetLanguage: string, sentenceContext: string): string {
+  return `${(word || '').trim().toLowerCase()}:${(targetLanguage || '')
+    .trim()
+    .toLowerCase()}:${sentenceContext.trim().toLowerCase()}`;
+}
+
+function buildLemmaCacheKey(
+  baseWord: string | undefined,
+  targetLanguage: string | undefined,
+  partOfSpeech: string | undefined = '',
+): string {
+  return `${(baseWord || '').trim().toLowerCase()}:${(targetLanguage || '')
+    .trim()
+    .toLowerCase()}:${(partOfSpeech || '').trim().toLowerCase()}`;
+}
+
+function ReaderPage(): JSX.Element {
   const location = useLocation();
-  const exactTranslationCache = useRef(new Map());
-  const lemmaTranslationCache = useRef(new Map());
-  const [activeWord, setActiveWord] = useState(null);
-  const [tooltipAnchor, setTooltipAnchor] = useState(null);
-  const [tooltipData, setTooltipData] = useState(null);
+  const state = location.state as ReaderLocationState | null;
+  const exactTranslationCache = useRef(new Map<string, TranslationResponse>());
+  const lemmaTranslationCache = useRef(new Map<string, TranslationResponse>());
+  const [activeWord, setActiveWord] = useState<string | null>(null);
+  const [tooltipAnchor, setTooltipAnchor] = useState<TooltipAnchor | null>(null);
+  const [tooltipData, setTooltipData] = useState<TranslationResponse | null>(null);
   const [tooltipError, setTooltipError] = useState('');
   const [loadingWord, setLoadingWord] = useState(false);
-  const [clickedWords, setClickedWords] = useState(() => new Set());
+  const [clickedWords, setClickedWords] = useState<Set<string>>(() => new Set());
 
-  const article = location.state?.article;
-  const topic = location.state?.topic || '';
-  const difficultyLevel = location.state?.difficultyLevel || 'beginner';
-  const preferredLanguage = location.state?.preferredLanguage || DEFAULT_LANGUAGE;
+  const article = state?.article;
+  const topic = state?.topic || '';
+  const difficultyLevel = state?.difficultyLevel || 'beginner';
+  const preferredLanguage = state?.preferredLanguage || DEFAULT_LANGUAGE;
 
   const articleMeta = useMemo(
     () => ({
@@ -37,12 +59,20 @@ function ReaderPage() {
     return <Navigate to="/" replace />;
   }
 
-  async function handleWordClick(word, sentenceContext, element) {
+  async function handleWordClick(
+    word: string,
+    sentenceContext: string,
+    element: HTMLButtonElement,
+  ): Promise<void> {
     const normalized = normalizeWord(word);
     const { normalizedWord, baseWordGuess } = normalizeWordForms(word);
     const normalizedSentence = sentenceContext.trim().toLowerCase();
-    const exactCacheKey = `${normalizedWord}:${preferredLanguage.toLowerCase()}:${normalizedSentence}`;
-    const lemmaCacheKey = `${baseWordGuess}:${preferredLanguage.toLowerCase()}:`;
+    const exactCacheKey = buildExactCacheKey(
+      normalizedWord,
+      preferredLanguage,
+      normalizedSentence,
+    );
+    const lemmaCacheKey = buildLemmaCacheKey(baseWordGuess, preferredLanguage);
     const rect = element.getBoundingClientRect();
 
     setActiveWord(word);
@@ -75,31 +105,43 @@ function ReaderPage() {
     setLoadingWord(true);
 
     try {
-      const response = await translateWord({
+      const apiResponse = await translateWord({
         word,
         sentenceContext,
         targetLanguage: preferredLanguage,
       });
+      const response: TranslationResponse = {
+        ...apiResponse,
+        surfaceWord: apiResponse.surfaceWord || normalizedWord,
+        baseWord: apiResponse.baseWord || baseWordGuess || normalizedWord,
+        isContextSensitive: apiResponse.isContextSensitive === true,
+        originalWordInTargetScript:
+          apiResponse.originalWordInTargetScript || apiResponse.pronunciation,
+      };
 
       exactTranslationCache.current.set(exactCacheKey, response);
 
       if (!response.isContextSensitive) {
-        const resolvedLemmaCacheKey = `${response.baseWord}:${preferredLanguage.toLowerCase()}:${(
-          response.partOfSpeech || ''
-        ).toLowerCase()}`;
+        const resolvedLemmaCacheKey = buildLemmaCacheKey(
+          response.baseWord,
+          preferredLanguage,
+          response.partOfSpeech || '',
+        );
         lemmaTranslationCache.current.set(resolvedLemmaCacheKey, response);
         lemmaTranslationCache.current.set(lemmaCacheKey, response);
       }
 
       setTooltipData(response);
     } catch (requestError) {
-      setTooltipError(requestError.message || 'Unable to translate that word.');
+      setTooltipError(
+        requestError instanceof Error ? requestError.message : 'Unable to translate that word.',
+      );
     } finally {
       setLoadingWord(false);
     }
   }
 
-  function closeTooltip() {
+  function closeTooltip(): void {
     setTooltipAnchor(null);
     setTooltipData(null);
     setTooltipError('');
@@ -144,8 +186,8 @@ function ReaderPage() {
         <section className="rounded-[2rem] border border-stone-200/80 bg-white/65 p-5 text-sm text-stone-600 shadow-sm">
           <p className="font-semibold text-ink">Reading tip</p>
           <p className="mt-1 leading-7">
-            Try reading one paragraph first, then tap only the words you truly need.
-            That keeps comprehension strong while still building vocabulary.
+            Try reading one paragraph first, then tap only the words you truly need. That keeps
+            comprehension strong while still building vocabulary.
           </p>
         </section>
 

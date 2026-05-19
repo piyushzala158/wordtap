@@ -1,15 +1,14 @@
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ErrorState from '../components/ErrorState';
 import Loader from '../components/Loader';
-import {
-  LANGUAGE_OPTIONS,
-  LEVEL_OPTIONS,
-} from '../constants/preferences';
+import { LANGUAGE_OPTIONS, LEVEL_OPTIONS } from '../constants/preferences';
 import { usePreferences } from '../hooks/usePreferences';
 import { generateArticle } from '../services/api';
+import type { DifficultyLevel, ReaderLocationState } from '../types/api';
 
-function HomePage() {
+function HomePage(): JSX.Element {
   const navigate = useNavigate();
   const {
     preferredLanguage,
@@ -21,7 +20,7 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setLoading(true);
     setError('');
@@ -32,16 +31,20 @@ function HomePage() {
         level: difficultyLevel,
       });
 
-      navigate('/reader', {
-        state: {
-          article,
-          topic: topic.trim(),
-          difficultyLevel,
-          preferredLanguage,
-        },
-      });
+      const state: ReaderLocationState = {
+        article,
+        topic: topic.trim(),
+        difficultyLevel,
+        preferredLanguage,
+      };
+
+      navigate('/reader', { state });
     } catch (requestError) {
-      setError(requestError.message || 'Unable to generate an article right now.');
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to generate an article right now.',
+      );
     } finally {
       setLoading(false);
     }
@@ -59,8 +62,8 @@ function HomePage() {
               WordTap turns every article into a live English lesson.
             </h1>
             <p className="max-w-2xl text-lg leading-8 text-stone-700">
-              Generate a fresh article, read at your pace, and tap any word for an
-              instant translation in your language.
+              Generate a fresh article, read at your pace, and tap any word for an instant
+              translation in your language.
             </p>
           </div>
           <div className="grid gap-4 rounded-[2rem] border border-white/70 bg-white/60 p-5 shadow-paper backdrop-blur sm:grid-cols-3">
@@ -108,7 +111,9 @@ function HomePage() {
                 <select
                   id="difficulty"
                   value={difficultyLevel}
-                  onChange={(event) => setDifficultyLevel(event.target.value)}
+                  onChange={(event) =>
+                    setDifficultyLevel(event.target.value as DifficultyLevel)
+                  }
                   className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink outline-none transition focus:border-ember focus:bg-white"
                 >
                   {LEVEL_OPTIONS.map((option) => (

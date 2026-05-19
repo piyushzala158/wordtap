@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import {
   DEFAULT_LANGUAGE,
   DEFAULT_LEVEL,
   STORAGE_KEYS,
 } from '../constants/preferences';
+import type { DifficultyLevel } from '../types/api';
 
-export function usePreferences() {
+interface UsePreferencesResult {
+  preferredLanguage: string;
+  setPreferredLanguage: Dispatch<SetStateAction<string>>;
+  difficultyLevel: DifficultyLevel;
+  setDifficultyLevel: Dispatch<SetStateAction<DifficultyLevel>>;
+}
+
+export function usePreferences(): UsePreferencesResult {
   const [preferredLanguage, setPreferredLanguage] = useState(DEFAULT_LANGUAGE);
-  const [difficultyLevel, setDifficultyLevel] = useState(DEFAULT_LEVEL);
+  const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>(DEFAULT_LEVEL);
 
   useEffect(() => {
     const savedLanguage = window.localStorage.getItem(STORAGE_KEYS.language);
@@ -18,7 +27,7 @@ export function usePreferences() {
     }
 
     if (savedLevel) {
-      setDifficultyLevel(savedLevel);
+      setDifficultyLevel(savedLevel as DifficultyLevel);
     }
   }, []);
 

@@ -1,25 +1,38 @@
 import { useEffect, useRef } from 'react';
+import type { CSSProperties } from 'react';
+import type { TooltipAnchor, TranslationResponse } from '../types/api';
 import Loader from './Loader';
 
-function Tooltip({ anchor, data, loading, error, onClose }) {
-  const tooltipRef = useRef(null);
+interface TooltipProps {
+  anchor: TooltipAnchor | null;
+  data: TranslationResponse | null;
+  loading: boolean;
+  error: string;
+  onClose: () => void;
+}
+
+function Tooltip({ anchor, data, loading, error, onClose }: TooltipProps): JSX.Element | null {
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!anchor) {
       return undefined;
     }
 
-    function handlePointerDown(event) {
+    function handlePointerDown(event: MouseEvent): void {
+      const target = event.target as Node | null;
+
       if (
+        target &&
         tooltipRef.current &&
-        !tooltipRef.current.contains(event.target) &&
-        !anchor.element?.contains(event.target)
+        !tooltipRef.current.contains(target) &&
+        !anchor.element.contains(target)
       ) {
         onClose();
       }
     }
 
-    function handleViewportChange() {
+    function handleViewportChange(): void {
       onClose();
     }
 
@@ -38,7 +51,7 @@ function Tooltip({ anchor, data, loading, error, onClose }) {
     return null;
   }
 
-  const style = {
+  const style: CSSProperties = {
     left: anchor.x,
     top: anchor.y,
     transform: 'translate(-50%, calc(-100% - 14px))',
@@ -56,15 +69,14 @@ function Tooltip({ anchor, data, loading, error, onClose }) {
           {anchor.word}
         </p>
         {loading ? <Loader label="Translating word..." /> : null}
-        {!loading && error ? (
-          <p className="text-sm text-red-600">{error}</p>
-        ) : null}
+        {!loading && error ? <p className="text-sm text-red-600">{error}</p> : null}
         {!loading && !error && data ? (
           <div className="space-y-2">
             <p className="text-lg font-semibold text-ink">{data.translation}</p>
-            {data.pronunciation ? (
+            {data.originalWordInTargetScript ? (
               <p className="text-sm text-stone-600">
-                Pronunciation: <span className="font-medium">{data.pronunciation}</span>
+                English word in your script:{' '}
+                <span className="font-medium">{data.originalWordInTargetScript}</span>
               </p>
             ) : null}
             {data.partOfSpeech ? (
@@ -79,7 +91,8 @@ function Tooltip({ anchor, data, loading, error, onClose }) {
             ) : null}
             {data.oppositeWords?.length ? (
               <p className="text-sm text-stone-600">
-                Opposite words: <span className="font-medium">{data.oppositeWords.join(', ')}</span>
+                Opposite words:{' '}
+                <span className="font-medium">{data.oppositeWords.join(', ')}</span>
               </p>
             ) : null}
           </div>

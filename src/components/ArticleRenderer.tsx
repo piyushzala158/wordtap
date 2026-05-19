@@ -1,9 +1,22 @@
 import {
   splitIntoParagraphs,
   splitParagraphWithSentenceContext,
+  type TokenWithSentence,
 } from '../utils/articleTokens';
 
-function ArticleRenderer({ article, activeWord, clickedWords, onWordClick }) {
+interface ArticleRendererProps {
+  article: string;
+  activeWord: string | null;
+  clickedWords: Set<string>;
+  onWordClick: (word: string, sentenceContext: string, element: HTMLButtonElement) => void;
+}
+
+function ArticleRenderer({
+  article,
+  activeWord,
+  clickedWords,
+  onWordClick,
+}: ArticleRendererProps): JSX.Element {
   const paragraphs = splitIntoParagraphs(article);
 
   return (
@@ -13,7 +26,7 @@ function ArticleRenderer({ article, activeWord, clickedWords, onWordClick }) {
 
         return (
           <p key={`${paragraphIndex}-${paragraph.slice(0, 20)}`} className="whitespace-pre-wrap">
-            {tokens.map((token, tokenIndex) => {
+            {tokens.map((token: TokenWithSentence, tokenIndex) => {
               if (token.type === 'space') {
                 return (
                   <span key={`${paragraphIndex}-${tokenIndex}`} aria-hidden="true">
@@ -31,7 +44,7 @@ function ArticleRenderer({ article, activeWord, clickedWords, onWordClick }) {
               }
 
               const isActive =
-                activeWord && activeWord.toLowerCase() === token.value.toLowerCase();
+                activeWord !== null && activeWord.toLowerCase() === token.value.toLowerCase();
               const isClicked = clickedWords.has(token.value.toLowerCase());
 
               return (

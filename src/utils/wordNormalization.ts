@@ -1,8 +1,13 @@
-function stripOuterPunctuation(word) {
+interface NormalizedWordForms {
+  normalizedWord: string;
+  baseWordGuess: string;
+}
+
+function stripOuterPunctuation(word: string): string {
   return word.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '');
 }
 
-function deriveBaseWord(word) {
+function deriveBaseWord(word: string): string {
   if (word.endsWith('ies') && word.length > 4) {
     return `${word.slice(0, -3)}y`;
   }
@@ -34,7 +39,7 @@ function deriveBaseWord(word) {
   return word;
 }
 
-export function normalizeWordForms(rawWord) {
+export function normalizeWordForms(rawWord: string): NormalizedWordForms {
   const normalizedWord = stripOuterPunctuation(rawWord.trim().toLowerCase());
   const baseWordGuess = deriveBaseWord(normalizedWord);
 
